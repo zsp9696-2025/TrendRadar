@@ -1,746 +1,614 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>热点新闻分析</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <title>全网热榜 - AI创作助手</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-            margin: 0;
-            padding: 16px;
-            background: #fafafa;
-            color: #333;
-            line-height: 1.5;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
         }
-
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
-        }
-
-        .header {
-            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-            color: white;
-            padding: 32px 24px;
-            text-align: center;
-            position: relative;
-        }
-
-        .save-buttons {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            display: flex;
-            gap: 8px;
-        }
-
-        .save-btn {
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 6px;
+        .hot-item {
+            transition: all 0.3s ease;
             cursor: pointer;
-            font-size: 13px;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            backdrop-filter: blur(10px);
-            white-space: nowrap;
         }
-
-        .save-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-            border-color: rgba(255, 255, 255, 0.5);
-            transform: translateY(-1px);
+        .hot-item:hover {
+            transform: translateX(8px);
+            background: rgba(255,255,255,0.1);
         }
-
-        .save-btn:active {
-            transform: translateY(0);
-        }
-
-        .save-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .header-title {
-            font-size: 22px;
-            font-weight: 700;
-            margin: 0 0 20px 0;
-        }
-
-        .header-info {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            font-size: 14px;
-            opacity: 0.95;
-        }
-
-        .info-item {
-            text-align: center;
-        }
-
-        .info-label {
-            display: block;
-            font-size: 12px;
-            opacity: 0.8;
-            margin-bottom: 4px;
-        }
-
-        .info-value {
-            font-weight: 600;
-            font-size: 16px;
-        }
-
-        .content {
-            padding: 24px;
-        }
-
-        .word-group {
-            margin-bottom: 40px;
-        }
-
-        .word-group:first-child {
-            margin-top: 0;
-        }
-
-        .word-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .word-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .word-name {
-            font-size: 17px;
-            font-weight: 600;
-            color: #1a1a1a;
-        }
-
-        .word-count {
-            color: #666;
-            font-size: 13px;
-            font-weight: 500;
-        }
-
-        .word-count.hot {
-            color: #dc2626;
-            font-weight: 600;
-        }
-
-        .word-count.warm {
-            color: #ea580c;
-            font-weight: 600;
-        }
-
-        .word-index {
-            color: #999;
-            font-size: 12px;
-        }
-
-        .news-item {
-            margin-bottom: 20px;
-            padding: 16px 0;
-            border-bottom: 1px solid #f5f5f5;
-            position: relative;
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .news-item:last-child {
-            border-bottom: none;
-        }
-
-        .news-number {
-            color: #999;
-            font-size: 13px;
-            font-weight: 600;
-            min-width: 20px;
-            text-align: center;
-            flex-shrink: 0;
-            background: #f8f9fa;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
+        .rank-1 { color: #ff4757; }
+        .rank-2 { color: #ff6348; }
+        .rank-3 { color: #ffa502; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
             justify-content: center;
-            align-self: flex-start;
-            margin-top: 8px;
+            align-items: flex-end;
         }
-
-        .news-content {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .news-header {
+        .modal.active {
             display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 8px;
-            flex-wrap: wrap;
         }
-
-        .source-name {
-            color: #666;
-            font-size: 12px;
-            font-weight: 500;
+        .modal-content {
+            background: white;
+            border-radius: 20px 20px 0 0;
+            width: 100%;
+            max-width: 600px;
+            max-height: 85vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
         }
-
-        .rank-num {
-            color: #fff;
-            background: #6b7280;
-            font-size: 10px;
-            font-weight: 700;
-            padding: 2px 6px;
-            border-radius: 10px;
-            min-width: 18px;
-            text-align: center;
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
         }
-
-        .rank-num.top {
-            background: #dc2626;
+        .ai-tool-card {
+            transition: all 0.2s ease;
         }
-
-        .rank-num.high {
-            background: #ea580c;
+        .ai-tool-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
-
-        .time-info {
-            color: #999;
-            font-size: 11px;
+        .template-btn {
+            transition: all 0.2s ease;
         }
-
-        .count-info {
-            color: #059669;
-            font-size: 11px;
-            font-weight: 500;
+        .template-btn:hover {
+            background: #f3f4f6;
+            border-color: #667eea;
         }
-
-        .news-title {
-            font-size: 15px;
-            line-height: 1.4;
-            color: #1a1a1a;
-            margin: 0;
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
         }
-
-        .news-link {
-            color: #2563eb;
-            text-decoration: none;
-        }
-
-        .news-link:hover {
-            text-decoration: underline;
-        }
-
-        .news-link:visited {
-            color: #7c3aed;
-        }
-
-        .footer {
-            margin-top: 32px;
-            padding: 20px 24px;
-            background: #f8f9fa;
-            border-top: 1px solid #e5e7eb;
-            text-align: center;
-        }
-
-        .footer-content {
-            font-size: 13px;
-            color: #6b7280;
-            line-height: 1.6;
-        }
-
-        .footer-link {
-            color: #4f46e5;
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.2s ease;
-        }
-
-        .footer-link:hover {
-            color: #7c3aed;
-            text-decoration: underline;
-        }
-
-        .project-name {
-            font-weight: 600;
-            color: #374151;
-        }
-
-        @media (max-width: 480px) {
-            body {
-                padding: 12px;
-            }
-            .header {
-                padding: 24px 20px;
-            }
-            .content {
-                padding: 20px;
-            }
-            .footer {
-                padding: 16px 20px;
-            }
-            .header-info {
-                grid-template-columns: 1fr;
-                gap: 12px;
-            }
-            .news-header {
-                gap: 6px;
-            }
-            .news-item {
-                gap: 8px;
-            }
-            .news-number {
-                width: 20px;
-                height: 20px;
-                font-size: 12px;
-            }
-            .save-buttons {
-                position: static;
-                margin-bottom: 16px;
-                display: flex;
-                gap: 8px;
-                justify-content: center;
-                flex-direction: column;
-                width: 100%;
-            }
-            .save-btn {
-                width: 100%;
-            }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <div class="save-buttons">
-                <button class="save-btn" onclick="saveAsImage()">保存为图片</button>
-                <button class="save-btn" onclick="saveAsMultipleImages()">分段保存</button>
+<body class="pb-20">
+    <!-- 头部 -->
+    <header class="bg-white/10 backdrop-blur-md text-white sticky top-0 z-50">
+        <div class="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-fire text-2xl text-yellow-400"></i>
+                <div>
+                    <h1 class="text-xl font-bold">全网热榜</h1>
+                    <p class="text-xs text-white/70">点击词条进行AI创作</p>
+                </div>
             </div>
-            <div class="header-title">热点新闻分析</div>
-            <div class="header-info">
-                <div class="info-item">
-                    <span class="info-label">报告类型</span>
-                    <span class="info-value">当日汇总</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">新闻总数</span>
-                    <span class="info-value">387 条</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">热点新闻</span>
-                    <span class="info-value">5 条</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">生成时间</span>
-                    <span class="info-value">06-16 07:17</span>
-                </div>
+            <div class="flex gap-2">
+                <button onclick="refreshData()" class="p-2 bg-white/20 rounded-full hover:bg-white/30 transition">
+                    <i class="fa-solid fa-rotate-right" id="refresh-icon"></i>
+                </button>
             </div>
         </div>
+    </header>
 
-        <div class="content">
-            <div class="word-group">
-                <div class="word-header">
-                    <div class="word-info">
-                        <div class="word-name">ai 人工智能</div>
-                        <div class="word-count hot">3 条</div>
-                    </div>
-                    <div class="word-index">1/4</div>
-                </div>
+    <!-- 平台筛选标签 -->
+    <div class="max-w-2xl mx-auto px-4 py-3">
+        <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" id="platform-tags">
+            <button class="platform-tag px-4 py-1.5 bg-white text-purple-600 rounded-full text-sm font-medium whitespace-nowrap shadow-sm active" data-platform="all">
+                全部
+            </button>
+            <button class="platform-tag px-4 py-1.5 bg-white/80 text-white rounded-full text-sm font-medium whitespace-nowrap hover:bg-white/90" data-platform="weibo">
+                微博
+            </button>
+            <button class="platform-tag px-4 py-1.5 bg-white/80 text-white rounded-full text-sm font-medium whitespace-nowrap hover:bg-white/90" data-platform="zhihu">
+                知乎
+            </button>
+            <button class="platform-tag px-4 py-1.5 bg-white/80 text-white rounded-full text-sm font-medium whitespace-nowrap hover:bg-white/90" data-platform="bilibili">
+                B站
+            </button>
+            <button class="platform-tag px-4 py-1.5 bg-white/80 text-white rounded-full text-sm font-medium whitespace-nowrap hover:bg-white/90" data-platform="douyin">
+                抖音
+            </button>
+            <button class="platform-tag px-4 py-1.5 bg-white/80 text-white rounded-full text-sm font-medium whitespace-nowrap hover:bg-white/90" data-platform="baidu">
+                百度
+            </button>
+        </div>
+    </div>
 
-                <div class="news-item">
-                    <div class="news-number">1</div>
-                    <div class="news-content">
-                        <div class="news-header">
-                            <span class="source-name">财联社热门</span>
-                            <span class="rank-num high">7-8</span>
-                            <span class="time-info">00:23~07:17</span>
-                            <span class="count-info">15次</span>
-                        </div>
-                        <div class="news-title">
-                            <a href="https://www.cls.cn/detail/2057563" target="_blank" class="news-link">上市首日暴涨140% 军用无人机公司登陆纽交所 AI打造产品核心竞争力</a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="news-item">
-                    <div class="news-number">2</div>
-                    <div class="news-content">
-                        <div class="news-header">
-                            <span class="source-name">tieba</span>
-                            <span class="rank-num">18-19</span>
-                            <span class="time-info">00:23~07:17</span>
-                            <span class="count-info">15次</span>
-                        </div>
-                        <div class="news-title">
-                            <a href="https://tieba.baidu.com/hottopic/browse/hottopic?topic_id=28342819&topic_name=%E4%BC%8A%E6%9C%97%E7%96%91%E7%94%A8AI%E4%BC%AA%E9%80%A0%E4%BB%A5%E5%86%9BF35%E6%AE%8B%E9%AA%B8%E5%9B%BE" target="_blank" class="news-link">伊朗疑用AI伪造以军F35残骸图</a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="news-item">
-                    <div class="news-number">3</div>
-                    <div class="news-content">
-                        <div class="news-header">
-                            <span class="source-name">zhihu</span>
-                            <span class="rank-num top">5-13</span>
-                            <span class="time-info">00:23~07:17</span>
-                            <span class="count-info">15次</span>
-                        </div>
-                        <div class="news-title">
-                            <a href="https://www.zhihu.com/question/596907281" target="_blank" class="news-link">罗杰·彭罗斯说无论意识是什么，都绝对不是一种计算。意思是：任何 AI 都不可能产生意识？</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="word-group">
-                <div class="word-header">
-                    <div class="word-info">
-                        <div class="word-name">DeepSeek 梁文锋</div>
-                        <div class="word-count">1 条</div>
-                    </div>
-                    <div class="word-index">2/4</div>
-                </div>
-
-                <div class="news-item">
-                    <div class="news-number">1</div>
-                    <div class="news-content">
-                        <div class="news-header">
-                            <span class="source-name">华尔街见闻</span>
-                            <span class="rank-num high">8-9</span>
-                            <span class="time-info">00:23~07:17</span>
-                            <span class="count-info">15次</span>
-                        </div>
-                        <div class="news-title">
-                            <a href="https://wallstreetcn.com/articles/3749141" target="_blank" class="news-link">恒生生科指数1月以来涨超60%，中国创新药的"DeepSeek时刻"超过了AI</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="word-group">
-                <div class="word-header">
-                    <div class="word-info">
-                        <div class="word-name">哪吒 饺子</div>
-                        <div class="word-count">1 条</div>
-                    </div>
-                    <div class="word-index">3/4</div>
-                </div>
-
-                <div class="news-item">
-                    <div class="news-number">1</div>
-                    <div class="news-content">
-                        <div class="news-header">
-                            <span class="source-name">百度热搜</span>
-                            <span class="rank-num">24-30</span>
-                            <span class="time-info">00:57~06:55</span>
-                            <span class="count-info">7次</span>
-                        </div>
-                        <div class="news-title">
-                            <a href="https://www.baidu.com/s?wd=%E3%80%8A%E5%93%AA%E5%90%922%E3%80%8B%E7%89%87%E6%96%B9%E6%88%96%E5%88%86%E8%B4%A652%E4%BA%BF%E5%85%83" target="_blank" class="news-link">《哪吒2》片方或分账52亿元</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="word-group">
-                <div class="word-header">
-                    <div class="word-info">
-                        <div class="word-name">米哈游 原神 星穹铁道</div>
-                        <div class="word-count">1 条</div>
-                    </div>
-                    <div class="word-index">4/4</div>
-                </div>
-
-                <div class="news-item">
-                    <div class="news-number">1</div>
-                    <div class="news-content">
-                        <div class="news-header">
-                            <span class="source-name">zhihu</span>
-                            <span class="rank-num top">5</span>
-                            <span class="time-info">06:55~07:17</span>
-                            <span class="count-info">2次</span>
-                        </div>
-                        <div class="news-title">
-                            <a href="https://www.zhihu.com/question/1905395386765537540" target="_blank" class="news-link">目前原神所有自机角色谁最有可能出新形态?</a>
-                        </div>
-                    </div>
-                </div>
+    <!-- 热榜列表 -->
+    <main class="max-w-2xl mx-auto px-4">
+        <div id="hotlist-container" class="space-y-3">
+            <div class="text-center text-white/70 py-20">
+                <div class="loading mb-4"></div>
+                <p>正在加载热榜数据...</p>
             </div>
         </div>
+    </main>
 
-        <div class="footer">
-            <div class="footer-content">
-                由 <span class="project-name">TrendRadar</span> 生成 · 
-                <a href="https://github.com/sansan0/TrendRadar" target="_blank" class="footer-link">
-                    GitHub 开源项目
+    <!-- AI创作助手弹窗 -->
+    <div id="ai-modal" class="modal">
+        <div class="modal-content">
+            <!-- 弹窗头部 -->
+            <div class="sticky top-0 bg-white border-b px-4 py-3 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-wand-magic-sparkles text-purple-600"></i>
+                    <span class="font-bold text-gray-800">AI创作助手</span>
+                </div>
+                <button onclick="closeModal()" class="p-2 hover:bg-gray-100 rounded-full">
+                    <i class="fa-solid fa-xmark text-gray-500"></i>
+                </button>
+            </div>
+
+            <!-- 当前话题 -->
+            <div class="px-4 py-4 bg-gradient-to-r from-purple-50 to-pink-50">
+                <div class="text-xs text-gray-500 mb-1">当前话题</div>
+                <div class="flex items-start gap-2">
+                    <h3 id="selected-topic" class="text-lg font-bold text-gray-800 flex-1"></h3>
+                    <button onclick="copyTopic()" class="px-3 py-1 bg-white rounded-lg text-sm text-purple-600 border border-purple-200 hover:bg-purple-50 transition">
+                        <i class="fa-regular fa-copy mr-1"></i>复制
+                    </button>
+                </div>
+                <a id="source-link" href="#" target="_blank" class="inline-flex items-center gap-1 mt-2 text-sm text-purple-600 hover:underline">
+                    <i class="fa-solid fa-external-link-alt text-xs"></i>
+                    查看原文
                 </a>
+            </div>
+
+            <!-- 提示词模板 -->
+            <div class="px-4 py-4">
+                <div class="text-sm font-medium text-gray-700 mb-3">选择提示词模板</div>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="selectTemplate('article')" class="template-btn p-3 border-2 border-gray-200 rounded-xl text-left" data-template="article">
+                        <i class="fa-solid fa-file-lines text-blue-500 text-xl mb-2"></i>
+                        <div class="font-medium text-gray-800">写文章</div>
+                        <div class="text-xs text-gray-500 mt-1">生成深度长文</div>
+                    </button>
+                    <button onclick="selectTemplate('comment')" class="template-btn p-3 border-2 border-gray-200 rounded-xl text-left" data-template="comment">
+                        <i class="fa-solid fa-comment-dots text-green-500 text-xl mb-2"></i>
+                        <div class="font-medium text-gray-800">写评论</div>
+                        <div class="text-xs text-gray-500 mt-1">生成精彩评论</div>
+                    </button>
+                    <button onclick="selectTemplate('post')" class="template-btn p-3 border-2 border-gray-200 rounded-xl text-left" data-template="post">
+                        <i class="fa-solid fa-pen-nib text-purple-500 text-xl mb-2"></i>
+                        <div class="font-medium text-gray-800">发动态</div>
+                        <div class="text-xs text-gray-500 mt-1">生成社交媒体文案</div>
+                    </button>
+                    <button onclick="selectTemplate('script')" class="template-btn p-3 border-2 border-gray-200 rounded-xl text-left" data-template="script">
+                        <i class="fa-solid fa-video text-red-500 text-xl mb-2"></i>
+                        <div class="font-medium text-gray-800">视频脚本</div>
+                        <div class="text-xs text-gray-500 mt-1">生成短视频脚本</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 自定义提示词 -->
+            <div class="px-4 py-3 border-t">
+                <div class="text-sm font-medium text-gray-700 mb-2">自定义提示词</div>
+                <textarea id="custom-prompt" class="w-full p-3 border border-gray-300 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple-500" rows="3" placeholder="输入你的自定义提示词..."></textarea>
+            </div>
+
+            <!-- AI工具选择 -->
+            <div class="px-4 py-4 border-t bg-gray-50">
+                <div class="text-sm font-medium text-gray-700 mb-3">前往AI工具创作</div>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="openAI('kimi')" class="ai-tool-card p-3 bg-white rounded-xl border border-gray-200 flex items-center gap-3">
+                        <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">Kimi</div>
+                        <div class="text-left">
+                            <div class="font-medium text-gray-800 text-sm">Kimi</div>
+                            <div class="text-xs text-gray-500">月之暗面</div>
+                        </div>
+                    </button>
+                    <button onclick="openAI('chatgpt')" class="ai-tool-card p-3 bg-white rounded-xl border border-gray-200 flex items-center gap-3">
+                        <div class="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">GPT</div>
+                        <div class="text-left">
+                            <div class="font-medium text-gray-800 text-sm">ChatGPT</div>
+                            <div class="text-xs text-gray-500">OpenAI</div>
+                        </div>
+                    </button>
+                    <button onclick="openAI('tongyi')" class="ai-tool-card p-3 bg-white rounded-xl border border-gray-200 flex items-center gap-3">
+                        <div class="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">通义</div>
+                        <div class="text-left">
+                            <div class="font-medium text-gray-800 text-sm">通义千问</div>
+                            <div class="text-xs text-gray-500">阿里出品</div>
+                        </div>
+                    </button>
+                    <button onclick="openAI('doubao')" class="ai-tool-card p-3 bg-white rounded-xl border border-gray-200 flex items-center gap-3">
+                        <div class="w-10 h-10 bg-gradient-to-br from-teal-400 to-teal-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">豆包</div>
+                        <div class="text-left">
+                            <div class="font-medium text-gray-800 text-sm">豆包</div>
+                            <div class="text-xs text-gray-500">字节出品</div>
+                        </div>
+                    </button>
+                    <button onclick="openAI('zhipu')" class="ai-tool-card p-3 bg-white rounded-xl border border-gray-200 flex items-center gap-3">
+                        <div class="w-10 h-10 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">智谱</div>
+                        <div class="text-left">
+                            <div class="font-medium text-gray-800 text-sm">智谱清言</div>
+                            <div class="text-xs text-gray-500">智谱AI</div>
+                        </div>
+                    </button>
+                    <button onclick="openAI('yiyan')" class="ai-tool-card p-3 bg-white rounded-xl border border-gray-200 flex items-center gap-3">
+                        <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">文心</div>
+                        <div class="text-left">
+                            <div class="font-medium text-gray-800 text-sm">文心一言</div>
+                            <div class="text-xs text-gray-500">百度出品</div>
+                        </div>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        async function saveAsImage() {
-            const button = event.target;
-            const originalText = button.textContent;
-            
+        // 数据源配置
+        const DATA_SOURCES = {
+            weibo: { name: '微博', icon: 'fa-weibo', color: '#e6162d' },
+            zhihu: { name: '知乎', icon: 'fa-book', color: '#0084ff' },
+            bilibili: { name: 'B站', icon: 'fa-tv', color: '#fb7299' },
+            douyin: { name: '抖音', icon: 'fa-music', color: '#000000' },
+            baidu: { name: '百度', icon: 'fa-paw', color: '#2932e1' },
+            toutiao: { name: '头条', icon: 'fa-newspaper', color: '#ed4040' },
+            tieba: { name: '贴吧', icon: 'fa-comments', color: '#3385ff' }
+        };
+
+        // 提示词模板
+        const PROMPT_TEMPLATES = {
+            article: (topic) => `请以"${topic}"为主题，写一篇深度分析文章。要求：
+1. 文章结构完整，包含引言、正文、结论
+2. 观点鲜明，论证充分
+3. 语言流畅，通俗易懂
+4. 字数在1000-1500字之间`,
+            comment: (topic) => `请针对"${topic}"这个话题，写几条精彩评论。要求：
+1. 观点独特，有深度
+2. 语言简洁有力
+3. 适合发布在社交媒体
+4. 提供3-5条不同角度的评论`,
+            post: (topic) => `请为"${topic}"这个话题创作社交媒体文案。要求：
+1. 吸引眼球的标题
+2. 内容简洁有趣
+3. 适合微博/朋友圈/小红书发布
+4. 可以配上相关话题标签`,
+            script: (topic) => `请以"${topic}"为主题，创作一个短视频脚本。要求：
+1. 时长1-3分钟
+2. 有吸引力的开场
+3. 内容结构清晰
+4. 包含画面描述和台词
+5. 适合抖音/B站发布`
+        };
+
+        // AI工具链接
+        const AI_TOOLS = {
+            kimi: 'https://kimi.moonshot.cn',
+            chatgpt: 'https://chat.openai.com',
+            tongyi: 'https://tongyi.aliyun.com',
+            doubao: 'https://www.doubao.com',
+            zhipu: 'https://chatglm.cn',
+            yiyan: 'https://yiyan.baidu.com'
+        };
+
+        let currentTopic = '';
+        let currentSource = '';
+        let selectedTemplate = '';
+        let hotlistData = [];
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            loadHotlist();
+            setupPlatformFilter();
+        });
+
+        // 加载热榜数据
+        async function loadHotlist() {
+            const container = document.getElementById('hotlist-container');
+            container.innerHTML = `
+                <div class="text-center text-white/70 py-20">
+                    <div class="loading mb-4"></div>
+                    <p>正在加载实时热榜数据...</p>
+                </div>
+            `;
+
             try {
-                button.textContent = '生成中...';
-                button.disabled = true;
-                window.scrollTo(0, 0);
-                
-                await new Promise(resolve => setTimeout(resolve, 200));
-                
-                const buttons = document.querySelector('.save-buttons');
-                buttons.style.visibility = 'hidden';
-                
-                await new Promise(resolve => setTimeout(resolve, 100));
-                
-                const container = document.querySelector('.container');
-                
-                const canvas = await html2canvas(container, {
-                    backgroundColor: '#ffffff',
-                    scale: 1.5,
-                    useCORS: true,
-                    allowTaint: false,
-                    imageTimeout: 10000,
-                    removeContainer: false,
-                    foreignObjectRendering: false,
-                    logging: false,
-                    width: container.offsetWidth,
-                    height: container.offsetHeight,
-                    x: 0,
-                    y: 0,
-                    scrollX: 0,
-                    scrollY: 0,
-                    windowWidth: window.innerWidth,
-                    windowHeight: window.innerHeight
-                });
-                
-                buttons.style.visibility = 'visible';
-                
-                const link = document.createElement('a');
-                const now = new Date();
-                const filename = `TrendRadar_热点新闻分析_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}.png`;
-                
-                link.download = filename;
-                link.href = canvas.toDataURL('image/png', 1.0);
-                
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                
-                button.textContent = '保存成功!';
-                setTimeout(() => {
-                    button.textContent = originalText;
-                    button.disabled = false;
-                }, 2000);
-                
-            } catch (error) {
-                const buttons = document.querySelector('.save-buttons');
-                buttons.style.visibility = 'visible';
-                button.textContent = '保存失败';
-                setTimeout(() => {
-                    button.textContent = originalText;
-                    button.disabled = false;
-                }, 2000);
-            }
-        }
-        
-        async function saveAsMultipleImages() {
-            const button = event.target;
-            const originalText = button.textContent;
-            const container = document.querySelector('.container');
-            const scale = 1.5;
-            const maxHeight = 5000 / scale;
-            
-            try {
-                button.textContent = '分析中...';
-                button.disabled = true;
-                
-                const wordGroups = Array.from(container.querySelectorAll('.word-group'));
-                const header = container.querySelector('.header');
-                const footer = container.querySelector('.footer');
-                
-                const containerRect = container.getBoundingClientRect();
-                const elements = [];
-                
-                elements.push({
-                    type: 'header',
-                    element: header,
-                    top: 0,
-                    bottom: header.offsetHeight,
-                    height: header.offsetHeight
-                });
-                
-                wordGroups.forEach(group => {
-                    const groupRect = group.getBoundingClientRect();
-                    const wordHeader = group.querySelector('.word-header');
-                    if (wordHeader) {
-                        const headerRect = wordHeader.getBoundingClientRect();
-                        elements.push({
-                            type: 'word-header',
-                            top: groupRect.top - containerRect.top,
-                            bottom: headerRect.bottom - containerRect.top,
-                            height: headerRect.height
-                        });
-                    }
+                // 定义CORS代理列表
+                const corsProxies = [
+                    (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+                    (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+                    (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+                    (url) => url
+                ];
+
+                const platforms = [
+                    { name: 'weibo', id: 'weibo' },
+                    { name: 'zhihu', id: 'zhihu' },
+                    { name: 'bilibili', id: 'bilibili-hot-search' },
+                    { name: 'baidu', id: 'baidu' },
+                    { name: 'toutiao', id: 'toutiao' },
+                    { name: 'douyin', id: 'douyin' }
+                ];
+
+                hotlistData = [];
+                let successCount = 0;
+
+                for (const platform of platforms) {
+                    const apiUrl = `https://newsnow.busiyi.world/api/s?id=${platform.id}&latest`;
+                    let data = null;
                     
-                    group.querySelectorAll('.news-item').forEach(item => {
-                        const rect = item.getBoundingClientRect();
-                        elements.push({
-                            type: 'news-item',
-                            top: rect.top - containerRect.top,
-                            bottom: rect.bottom - containerRect.top,
-                            height: rect.height
-                        });
-                    });
-                });
-                
-                const footerRect = footer.getBoundingClientRect();
-                elements.push({
-                    type: 'footer',
-                    top: footerRect.top - containerRect.top,
-                    bottom: footerRect.bottom - containerRect.top,
-                    height: footer.offsetHeight
-                });
-                
-                const segments = [];
-                let currentSegment = { start: 0, end: 0, height: 0 };
-                let headerHeight = header.offsetHeight;
-                currentSegment.height = headerHeight;
-                
-                for (let i = 1; i < elements.length; i++) {
-                    const element = elements[i];
-                    const potentialHeight = element.bottom - currentSegment.start;
-                    
-                    if (potentialHeight > maxHeight && currentSegment.height > headerHeight) {
-                        currentSegment.end = elements[i - 1].bottom;
-                        segments.push(currentSegment);
+                    for (const proxy of corsProxies) {
+                        if (data) break;
                         
-                        currentSegment = {
-                            start: currentSegment.end,
-                            end: 0,
-                            height: element.bottom - currentSegment.end
-                        };
-                    } else {
-                        currentSegment.height = potentialHeight;
-                        currentSegment.end = element.bottom;
+                        try {
+                            const proxyUrl = proxy(apiUrl);
+                            const controller = new AbortController();
+                            const timeoutId = setTimeout(() => controller.abort(), 8000);
+                            
+                            const response = await fetch(proxyUrl, {
+                                method: 'GET',
+                                headers: { 
+                                    'Accept': 'application/json',
+                                    'Origin': window.location.origin
+                                },
+                                signal: controller.signal,
+                                mode: 'cors'
+                            });
+                            
+                            clearTimeout(timeoutId);
+                            
+                            if (response.ok) {
+                                const text = await response.text();
+                                try {
+                                    data = JSON.parse(text);
+                                } catch (e) {}
+                            }
+                        } catch (e) {}
+                    }
+                    
+                    if (data && data.items && Array.isArray(data.items) && data.items.length > 0) {
+                        data.items.slice(0, 15).forEach((item, index) => {
+                            if (item.title && typeof item.title === 'string') {
+                                hotlistData.push({
+                                    platform: platform.name,
+                                    title: item.title.trim(),
+                                    url: item.url || item.mobileUrl || buildSearchUrl(item.title, platform.name),
+                                    rank: index + 1,
+                                    hot: item.hot || Math.max(10000, 1000000 - index * 60000)
+                                });
+                            }
+                        });
+                        successCount++;
                     }
                 }
-                
-                if (currentSegment.height > 0) {
-                    currentSegment.end = container.offsetHeight;
-                    segments.push(currentSegment);
-                }
-                
-                button.textContent = `生成中 (0/${segments.length})...`;
-                
-                const buttons = document.querySelector('.save-buttons');
-                buttons.style.visibility = 'hidden';
-                
-                const images = [];
-                for (let i = 0; i < segments.length; i++) {
-                    const segment = segments[i];
-                    button.textContent = `生成中 (${i + 1}/${segments.length})...`;
-                    
-                    const tempContainer = document.createElement('div');
-                    tempContainer.style.cssText = `
-                        position: absolute;
-                        left: -9999px;
-                        top: 0;
-                        width: ${container.offsetWidth}px;
-                        background: white;
+
+                if (hotlistData.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center text-white py-10">
+                            <i class="fa-solid fa-wifi-slash text-4xl mb-4 opacity-50"></i>
+                            <p class="mb-4">数据加载失败，可能是网络或跨域限制</p>
+                            <div class="text-sm text-white/70 mb-4">
+                                <p>建议部署到 GitHub Pages 后访问</p>
+                            </div>
+                            <div class="flex flex-wrap gap-2 justify-center">
+                                <button onclick="loadHotlist()" class="px-4 py-2 bg-white/20 rounded-lg text-sm hover:bg-white/30">
+                                    <i class="fa-solid fa-rotate-right mr-1"></i>重试
+                                </button>
+                                <button onclick="loadDemoData()" class="px-4 py-2 bg-purple-500/80 rounded-lg text-sm hover:bg-purple-500">
+                                    <i class="fa-solid fa-play mr-1"></i>使用演示数据体验
+                                </button>
+                            </div>
+                        </div>
                     `;
-                    
-                    const clonedContainer = container.cloneNode(true);
-                    const clonedButtons = clonedContainer.querySelector('.save-buttons');
-                    if (clonedButtons) {
-                        clonedButtons.style.display = 'none';
-                    }
-                    
-                    tempContainer.appendChild(clonedContainer);
-                    document.body.appendChild(tempContainer);
-                    
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                    
-                    const canvas = await html2canvas(clonedContainer, {
-                        backgroundColor: '#ffffff',
-                        scale: scale,
-                        useCORS: true,
-                        allowTaint: false,
-                        imageTimeout: 10000,
-                        logging: false,
-                        width: container.offsetWidth,
-                        height: segment.end - segment.start,
-                        x: 0,
-                        y: segment.start,
-                        windowWidth: window.innerWidth,
-                        windowHeight: window.innerHeight
-                    });
-                    
-                    images.push(canvas.toDataURL('image/png', 1.0));
-                    document.body.removeChild(tempContainer);
+                    return;
                 }
-                
-                buttons.style.visibility = 'visible';
-                
-                const now = new Date();
-                const baseFilename = `TrendRadar_热点新闻分析_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
-                
-                for (let i = 0; i < images.length; i++) {
-                    const link = document.createElement('a');
-                    link.download = `${baseFilename}_part${i + 1}.png`;
-                    link.href = images[i];
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                }
-                
-                button.textContent = `已保存 ${segments.length} 张图片!`;
-                setTimeout(() => {
-                    button.textContent = originalText;
-                    button.disabled = false;
-                }, 2000);
-                
+
+                hotlistData.sort((a, b) => b.hot - a.hot);
+                renderHotlist(hotlistData);
             } catch (error) {
-                console.error('分段保存失败:', error);
-                const buttons = document.querySelector('.save-buttons');
-                buttons.style.visibility = 'visible';
-                button.textContent = '保存失败';
-                setTimeout(() => {
-                    button.textContent = originalText;
-                    button.disabled = false;
-                }, 2000);
+                container.innerHTML = `
+                    <div class="text-center text-white py-20">
+                        <i class="fa-solid fa-circle-exclamation text-4xl mb-4"></i>
+                        <p>加载出错</p>
+                        <button onclick="loadHotlist()" class="mt-4 px-4 py-2 bg-white/20 rounded-lg text-sm">
+                            重新加载
+                        </button>
+                    </div>
+                `;
             }
         }
-        
-        document.addEventListener('DOMContentLoaded', function() {
-            window.scrollTo(0, 0);
+
+        // 加载演示数据
+        function loadDemoData() {
+            hotlistData = [
+                { platform: 'weibo', title: 'AI技术正在改变我们的生活方式', url: 'https://s.weibo.com/weibo?q=AI技术正在改变我们的生活方式', rank: 1, hot: 5200000 },
+                { platform: 'zhihu', title: '如何看待最新的科技发展趋势？', url: 'https://www.zhihu.com/search?type=content&q=如何看待最新的科技发展趋势', rank: 1, hot: 4800000 },
+                { platform: 'baidu', title: '春节放假安排公布', url: 'https://www.baidu.com/s?wd=春节放假安排公布', rank: 1, hot: 4500000 },
+                { platform: 'bilibili', title: '2024年最受欢迎的动画排行榜', url: 'https://search.bilibili.com/all?keyword=2024年最受欢迎的动画排行榜', rank: 1, hot: 3800000 },
+                { platform: 'toutiao', title: '新能源汽车销量创新高', url: 'https://so.toutiao.com/search?keyword=新能源汽车销量创新高', rank: 1, hot: 3500000 },
+                { platform: 'douyin', title: '这个春节去哪儿玩？热门景点推荐', url: 'https://www.douyin.com/search/这个春节去哪儿玩', rank: 1, hot: 3200000 },
+                { platform: 'weibo', title: '电影票房突破历史新高', url: 'https://s.weibo.com/weibo?q=电影票房突破历史新高', rank: 2, hot: 2800000 },
+                { platform: 'zhihu', title: '程序员如何提升工作效率？', url: 'https://www.zhihu.com/search?type=content&q=程序员如何提升工作效率', rank: 2, hot: 2500000 },
+                { platform: 'baidu', title: '健康饮食的十大建议', url: 'https://www.baidu.com/s?wd=健康饮食的十大建议', rank: 2, hot: 2200000 },
+                { platform: 'bilibili', title: '新手入门编程最佳语言推荐', url: 'https://search.bilibili.com/all?keyword=新手入门编程最佳语言推荐', rank: 2, hot: 1900000 },
+                { platform: 'toutiao', title: '房地产市场最新政策解读', url: 'https://so.toutiao.com/search?keyword=房地产市场最新政策解读', rank: 2, hot: 1600000 },
+                { platform: 'douyin', title: '学会这几招，拍照更好看', url: 'https://www.douyin.com/search/学会这几招拍照更好看', rank: 2, hot: 1400000 }
+            ];
+            hotlistData.sort((a, b) => b.hot - a.hot);
+            renderHotlist(hotlistData);
+            showToast('已加载演示数据，点击词条可体验AI创作功能');
+        }
+
+        // 构建搜索链接
+        function buildSearchUrl(title, platform) {
+            const encodedTitle = encodeURIComponent(title);
+            switch(platform) {
+                case 'weibo': return `https://s.weibo.com/weibo?q=${encodedTitle}`;
+                case 'zhihu': return `https://www.zhihu.com/search?type=content&q=${encodedTitle}`;
+                case 'baidu': return `https://www.baidu.com/s?wd=${encodedTitle}`;
+                case 'bilibili': return `https://search.bilibili.com/all?keyword=${encodedTitle}`;
+                case 'douyin': return `https://www.douyin.com/search/${encodedTitle}`;
+                case 'toutiao': return `https://so.toutiao.com/search?dvpf=pc&keyword=${encodedTitle}`;
+                default: return `https://www.baidu.com/s?wd=${encodedTitle}`;
+            }
+        }
+
+        // 渲染热榜
+        function renderHotlist(data) {
+            const container = document.getElementById('hotlist-container');
+            
+            if (data.length === 0) {
+                container.innerHTML = '<div class="text-center text-white py-20">暂无数据</div>';
+                return;
+            }
+
+            container.innerHTML = data.map((item, index) => {
+                const source = DATA_SOURCES[item.platform] || { name: item.platform, icon: 'fa-fire', color: '#666' };
+                const rankClass = index < 3 ? `rank-${index + 1}` : 'text-gray-400';
+                const hotDisplay = item.hot > 10000 ? (item.hot / 10000).toFixed(1) + '万' : item.hot;
+                
+                return `
+                    <div class="hot-item bg-white/95 backdrop-blur rounded-xl p-4 flex items-center gap-4 shadow-lg" 
+                         onclick="openAIModal('${escapeHtml(item.title)}', '${item.url}', '${item.platform}')">
+                        <div class="text-2xl font-bold ${rankClass} w-8 text-center">${index + 1}</div>
+                        <div class="flex-1 min-w-0">
+                            <div class="font-medium text-gray-800 truncate">${escapeHtml(item.title)}</div>
+                            <div class="flex items-center gap-3 mt-1">
+                                <span class="text-xs px-2 py-0.5 rounded-full" style="background: ${source.color}20; color: ${source.color}">
+                                    <i class="fa-solid ${source.icon} text-xs mr-1"></i>${source.name}
+                                </span>
+                                ${item.hot ? `<span class="text-xs text-gray-500"><i class="fa-solid fa-fire text-orange-400 mr-1"></i>${hotDisplay}</span>` : ''}
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-gray-300"></i>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 平台筛选
+        function setupPlatformFilter() {
+            const tags = document.querySelectorAll('.platform-tag');
+            tags.forEach(tag => {
+                tag.addEventListener('click', () => {
+                    tags.forEach(t => {
+                        t.classList.remove('bg-white', 'text-purple-600', 'active');
+                        t.classList.add('bg-white/80', 'text-white');
+                    });
+                    tag.classList.remove('bg-white/80', 'text-white');
+                    tag.classList.add('bg-white', 'text-purple-600', 'active');
+
+                    const platform = tag.dataset.platform;
+                    if (platform === 'all') {
+                        renderHotlist(hotlistData);
+                    } else {
+                        const filtered = hotlistData.filter(item => item.platform === platform);
+                        renderHotlist(filtered);
+                    }
+                });
+            });
+        }
+
+        // 打开AI创作弹窗
+        function openAIModal(title, url, platform) {
+            currentTopic = title;
+            currentSource = url;
+            document.getElementById('selected-topic').textContent = title;
+            document.getElementById('source-link').href = url || '#';
+            document.getElementById('ai-modal').classList.add('active');
+            selectTemplate('article');
+        }
+
+        // 关闭弹窗
+        function closeModal() {
+            document.getElementById('ai-modal').classList.remove('active');
+        }
+
+        // 选择模板
+        function selectTemplate(template) {
+            selectedTemplate = template;
+            document.querySelectorAll('.template-btn').forEach(btn => {
+                if (btn.dataset.template === template) {
+                    btn.classList.add('border-purple-500', 'bg-purple-50');
+                } else {
+                    btn.classList.remove('border-purple-500', 'bg-purple-50');
+                }
+            });
+
+            const customPrompt = document.getElementById('custom-prompt');
+            if (PROMPT_TEMPLATES[template]) {
+                customPrompt.value = PROMPT_TEMPLATES[template](currentTopic);
+            }
+        }
+
+        // 打开AI工具
+        function openAI(tool) {
+            const prompt = document.getElementById('custom-prompt').value;
+            if (!prompt) {
+                alert('请先选择模板或输入提示词');
+                return;
+            }
+
+            const baseUrl = AI_TOOLS[tool];
+            if (!baseUrl) return;
+
+            copyToClipboard(prompt);
+            window.open(baseUrl, '_blank');
+            showToast('提示词已复制，请在AI工具中粘贴使用');
+        }
+
+        // 复制话题
+        function copyTopic() {
+            copyToClipboard(currentTopic);
+            showToast('话题已复制');
+        }
+
+        // 复制到剪贴板
+        function copyToClipboard(text) {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text);
+            } else {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+            }
+        }
+
+        // 显示提示
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full text-sm z-50';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // 刷新数据
+        function refreshData() {
+            const icon = document.getElementById('refresh-icon');
+            icon.classList.add('fa-spin');
+            loadHotlist().then(() => {
+                setTimeout(() => icon.classList.remove('fa-spin'), 500);
+            });
+        }
+
+        // HTML转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 点击弹窗外部关闭
+        document.getElementById('ai-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'ai-modal') {
+                closeModal();
+            }
         });
     </script>
 </body>
